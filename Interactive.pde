@@ -33,65 +33,21 @@ public static class Interactive {
     }
   }
   
-  private boolean insideComponent(int x, int y, Component c) {
+  static boolean insideComponent(int x, int y, Component c) {
     return x >= c.x && y >= c.y && x <= c.x + c.width && y <= c.y + c.height;
   }
   
   public void mouseEvent(MouseEvent event) {
     int x = event.getX();
     int y = event.getY();
-
-    switch (event.getAction()) {
-      case MouseEvent.PRESS:
-        mousePressed(x, y);
-        break;
-      case MouseEvent.RELEASE:
-        mouseReleased(x, y);
-        break;
-      case MouseEvent.CLICK:
-        mouseClicked(x, y);
-        break;
-      case MouseEvent.DRAG:
-        mouseDragged(x, y);
-        break;
-      case MouseEvent.MOVE:
-        mouseMoved(x, y);
-        break;
-    }
-  }
-  
-  void mousePressed(int x, int y) {
     for (Component c : components) {
-      if (!insideComponent(x, y, c)) continue;
-      c.mousePressed();
-    }
-  }
-  
-  void mouseClicked(int x, int y) {
-    for (Component c : components) {
-      if (!insideComponent(x, y, c)) continue;
-      c.mouseClicked();
+      if (insideComponent(x, y, c)) {
+        c.mouseOver = true;
+        c.mouseEvent(event.getAction(), x, y);
+      } else {
+        c.mouseOver = false;
+      }
     }
   }
 
-  void mouseReleased(int x, int y) {
-    for (Component c : components) {
-      if (!insideComponent(x, y, c)) continue;
-      c.mouseReleased();
-    }
-  }
-  
-  void mouseMoved(int x, int y) {
-    for (Component c : components) {
-      if (!insideComponent(x, y, c)) continue;
-      c.mouseMoved();
-    }
-  }
-  
-  void mouseDragged(int x, int y) {
-    for (Component c : components) {
-      if (!insideComponent(x, y, c)) continue;
-      c.mouseDragged();
-    }
-  }
 }

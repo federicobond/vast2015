@@ -13,7 +13,8 @@ import java.io.FileNotFoundException;
 // * When hovering over tracking id in list, highlight track point, 
 //   maybe draw a line between id and point
 // * Save tracking data into file
-// * Take into account check-ins to randomly distribute points inside building
+// * Read many more points per draw cicle. Maybe buffer 30 secs of new data on each cycle
+// * Select ids and compute statistics: how much time do they spend in the park? average distance travelled? how many rides? time moving vs time stopped, average messages sent
 
 String LOCATION_DATA = "/Users/federicobond/Downloads/MC1 2015 Data/park-movement-Fri.csv";
 String COMM_DATA = "/Users/federicobond/Downloads/MC2 2015 Data/comm-data-Fri.csv";
@@ -46,11 +47,16 @@ boolean step = false;
 
 boolean showCommunications = true;
 
+PFont fontBold, fontRegular;
+
 void setup() {
   randomSeed(0); // make colors repeatable
-  size(WIDTH + 270, HEIGHT);
+  size(WIDTH + SIDEBAR, HEIGHT);
+  
+  fontBold = loadFont("Menlo.vlw");
+  fontRegular = loadFont("Menlo-Regular.vlw");
 
-  textFont(loadFont("Menlo.vlw"));
+  textFont(fontRegular);
   textSize(14);
   
   locReader = openData(LOCATION_DATA);
@@ -63,6 +69,7 @@ void setup() {
   comTimestamp = comFields[0];
   
   Interactive.make(this);
+  Interactive.add(sidebar);
   
   updateDataFiles();
 
@@ -116,17 +123,15 @@ void draw() {
   
   // store the map transformation matrix for later
   matrix = getMatrix();
-  
+
   drawCommunications();
   
   drawTrackers();
   popMatrix();
 
-  drawMapControls();
-  drawSidebar();
-  
   drawSelection();
-  drawTooltip();
+
+  drawMapControls();
   
   step = false;
 }
@@ -146,57 +151,15 @@ void drawMapControls() {
   text("Play", 165, 18);
   text("Pause", 210, 18);
   text("Save", 263, 18);
-}
-
-public class DataFileItem extends Component {
-  String name;
-
-  DataFileItem(String name, int x, int y, int w, int h) {
-    super(x, y, w, h);
-    this.name = name;
-  }
-  
-  void init() {
-    Interactive.add(this);
-  }
-  
-  void mousePressed() {
-    loadData(name);
-  }
-  
-  void draw() {
-    noStroke();
-    if (mouseX >= x && mouseX <= x + width
-        && mouseY >= y && mouseY <= y + height) {
-      fill(60);
-    } else {
-      fill(45);
-    }
-    rect(x, y, width, height);
-    fill(230);
-    text(name, x + 20, y + 17);
-  }
   
   
-}
-
-void drawSidebar() {
-  noStroke();
-  
-  fill(30);
-  rect(WIDTH, 0, WIDTH + SIDEBAR, HEIGHT);
-  
-  strokeWeight(1);
-  stroke(50);
-  fill(255);
-
-  text("Data files:", WIDTH + 20, 25);
-  line(WIDTH, 38, WIDTH + SIDEBAR, 38);
-  
-  text("Tracking: (" + trackList.size() + ")", WIDTH + 20, 375);
-  line(WIDTH, 388, WIDTH + SIDEBAR, 388);
-  for (int i = 0; i < trackList.size(); i++) {
-    text(trackList.get(i), WIDTH + 20 + (80 * (i%3)), 412 + (i/3) * 25);
+  if (mouseX <= WIDTH && zoom == 1.0) { 
+    String label = (int)map(mouseX, 0, WIDTH, 0, 100) + "," + (int)map(mouseY, 0, HEIGHT, 0, 100);
+    
+    fill(255);
+    textAlign(RIGHT);
+    text(label, WIDTH - 10, HEIGHT - 10);
+    textAlign(LEFT);
   }
 }
 
@@ -246,18 +209,6 @@ void drawTrackers() {
   for (Tracker t : trackingPoints) {
     t.display();
   }
-}
-
-void drawTooltip() {
-  if (mouseX > WIDTH) return;
-
-  noStroke();
-  fill(0, 0, 0, 100);
-  String label = (int)map(mouseX, 0, WIDTH, 0, 100) + "," + (int)map(mouseY, 0, HEIGHT, 0, 100);
-  rect(mouseX + 10, mouseY + 12, textWidth(label) + 10, 25, 3);
-  
-  fill(255);
-  text(label, mouseX + 15, mouseY + 29);
 }
 
 void mouseClicked() {
@@ -313,8 +264,8 @@ void keyPressed() {
   } else if (key == '+') {
     float newZoom = constrain(zoom + ZOOM_STEP, 1, MAX_ZOOM);
     if (zoom != newZoom) {
-      pan.x -= (0.1 * WIDTH) / 2.0;
-      pan.y -= (0.1 * HEIGHT) / 2.0;
+      pan.x -= ((newZoom - zoom) * WIDTH) / 2.0;
+      pan.y -= ((newZoom - zoom) * HEIGHT) / 2.0;
     }
     zoom = newZoom;
   } else if (key == '-') {

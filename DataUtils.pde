@@ -50,7 +50,7 @@ void saveData() {
     locs.append(loc);
   }
   obj.setJSONArray("locations", locs);
-  saveJSONObject(obj, SAVEDATA_DIR + "/data-" + timestamp.replace(" ", "_") + ".json");
+  saveJSONObject(obj, SAVEDATA_DIR + "/data-" + timestamp.replace(" ", "_") + ".json", "compact");
   updateDataFiles();
   println("Data snapshot saved");
 }
@@ -98,6 +98,7 @@ void loadData(String file) {
 }
 
 ArrayList<DataFileItem> dataFilesList = new ArrayList<DataFileItem>();
+Sidebar sidebar = new Sidebar(WIDTH, 0, SIDEBAR, HEIGHT);
 
 void updateDataFiles() {
   File folder = new File(SAVEDATA_DIR);
@@ -110,8 +111,9 @@ void updateDataFiles() {
     }
   }
 
+  sidebar.removeAllItems();
   for (int i = 0; i < dataFiles.size(); i++) {
-    DataFileItem item = new DataFileItem(dataFiles.get(i), WIDTH, 40 + i * 26, 270, 25);
-    item.init();
+    DataFileItem item = new DataFileItem(dataFiles.get(i), 0, 40 + i * 26, SIDEBAR, 25);
+    sidebar.addItem(item);
   }
 }
