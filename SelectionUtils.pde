@@ -1,3 +1,23 @@
+void handleSelection() {
+  if (firstMouseX == -1) {
+    // selection started outside map area
+    return;
+  }
+  if (abs(firstMouseX - mouseX) < 2 || abs(firstMouseY - mouseY) < 2) {
+    // selection too small, ignoring...
+    return;
+  }
+
+  if (alted) {
+    removeTracked();
+    return;
+  }
+
+  if (!shifted) clearTracked();
+
+  addTracked();
+}
+
 boolean insideSelection(PVector v) {
   // matrix holds the current transformation matrix
   PVector pos = new PVector();
@@ -8,12 +28,12 @@ boolean insideSelection(PVector v) {
 }
 
 void removeTracked() {
-  Iterator<Integer> it = trackList.iterator();
+  Iterator<Integer> it = trackSet.iterator();
   while (it.hasNext()) {
     Tracker t = locations.get(it.next());
     if (insideSelection(t.pos)) {
       it.remove();
-      t.tracking = false;
+      t.setTracking(false);
     }
   }
   return;
@@ -21,11 +41,12 @@ void removeTracked() {
 
 void clearTracked() {
   // remove previous tracked items
-  for (Integer id : trackList) {
+  for (Integer id : trackSet) {
     Tracker t = locations.get(id);
-    if (t != null) t.tracking = false;
+    if (t != null) t.setTracking(false);
   }
-  trackList.clear();
+  trackSet.clear();
+  sidebar2.y = 0;
 }
 
 void addTracked() {
@@ -33,8 +54,8 @@ void addTracked() {
     int id = (Integer)e.getKey();
     Tracker t = (Tracker) e.getValue();
     if (insideSelection(t.pos)) {
-      trackList.add(id);
-      t.tracking = true;
+      trackSet.add(id);
+      t.setTracking(true);
     }
   }
 }

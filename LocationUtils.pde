@@ -1,8 +1,10 @@
 void updateLocation(int id, int x, int y) {
+
   Tracker t = (Tracker)locations.get(id);
   if (t == null) {
-    locations.put(id, new Tracker(id, new PVector(x, y)));
+    t = new Tracker(id, new PVector(x, y));
+    locations.put(id, t);
   } else {
-    t.pos.set(x, y);
+    t.setPos(x, y);
   }
 }

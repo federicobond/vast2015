@@ -1,5 +1,10 @@
-String SAVEDATA_DIR = "/Users/federicobond/data";
-ArrayList<String> dataFiles = new ArrayList<String>();
+String locationData(String day) {
+  return String.format(LOCATION_DATA, day);
+}
+
+String commData(String day) {
+  return String.format(COMM_DATA, day);
+}
 
 BufferedReader openData(String file) {
   BufferedReader reader = null;
@@ -25,8 +30,11 @@ String[] getData(BufferedReader reader) {
     println("Cannot read line");
     exit();
   }
-    
-  return line.split(",");
+
+  if (line != null) {
+    return line.split(",");
+  }
+  return null;
 }
 
 void closeData(BufferedReader reader) {
@@ -34,8 +42,6 @@ void closeData(BufferedReader reader) {
     reader.close();
   } catch (IOException ignore) {}
 }
-
-
 
 void saveData() {
   JSONObject obj = new JSONObject();
@@ -55,65 +61,87 @@ void saveData() {
   println("Data snapshot saved");
 }
 
-void loadData(String file) {
+volatile String saveFile;
+
+void loadData(String _file) {
+  loading = true;
+  saveFile = _file;
+  thread("_loadData");
+}
+
+void _seekDataPoint(String savedTimestamp) {
+  String dayNumber = savedTimestamp.substring(7, 9);
+  String day;
+
+  if (dayNumber.equals("06")) day = "Fri";
+  else if (dayNumber.equals("07")) day = "Sat";
+  else if (dayNumber.equals("08")) day = "Sun";
+  else throw new RuntimeException("unrecognized day");
+
+  if (!timestamp.substring(7, 9).equals(dayNumber)
+      || timestamp.compareTo(savedTimestamp) >= 0) {
+
+    // close current reader
+    closeData(locReader);
+    closeData(comReader);
+
+    // open new reader and forward to saved timestamp
+    locReader = openData(locationData(day));
+    comReader = openData(commData(day));
+  }
+
+  do {
+    fields = getData(locReader);
+    timestamp = fields[0];
+  } while (timestamp.compareTo(savedTimestamp) < 1);
+
+  do {
+    comFields = getData(comReader);
+    comTimestamp = comFields[0];
+  } while (comTimestamp.compareTo(savedTimestamp) < 1);
+
+  newTimestamp = timestamp;
+}
+
+void _loadData() {
   // load and update locations
-  JSONObject obj = loadJSONObject(SAVEDATA_DIR + "/" + file);
-  trackList.clear();
-  locations.clear();
-  comms.clear();
+
+  JSONObject obj = loadJSONObject(SAVEDATA_DIR + "/" + saveFile);
 
   JSONArray savedLocs = obj.getJSONArray("locations");
   int size = savedLocs.size();
 
+  locations.clear();
+  comms.clear();
+
   // reset the seed so we get the same colors
   // each time we load the file
   randomSeed(0); 
+
   for (int i = 0; i < size; i++) {
     JSONObject savedLoc = savedLocs.getJSONObject(i);
     updateLocation(savedLoc.getInt("id"), savedLoc.getInt("x"), savedLoc.getInt("y"));
   }
 
-  // close current reader
-  closeData(locReader);
-  closeData(comReader);
-  
-  // open new reader and forward to saved timestamp
-  locReader = openData(LOCATION_DATA);
-  comReader = openData(COMM_DATA);
-
-  String savedTimestamp = obj.getString("timestamp");
-  do {
-    fields = getData(locReader);
-    timestamp = fields[0];
-  } while (!timestamp.equals(savedTimestamp));
-  
-  do {
-    comFields = getData(comReader);
-    comTimestamp = comFields[0];
-  } while (comTimestamp.compareTo(savedTimestamp) < 1);
-  
-  newTimestamp = timestamp;
-  
+  _seekDataPoint(obj.getString("timestamp"));
   println("Data snapshot loaded");
-}
 
-ArrayList<DataFileItem> dataFilesList = new ArrayList<DataFileItem>();
-Sidebar sidebar = new Sidebar(WIDTH, 0, SIDEBAR, HEIGHT);
+  loading = false;
+}
 
 void updateDataFiles() {
   File folder = new File(SAVEDATA_DIR);
   File[] listOfFiles = folder.listFiles();
 
-  dataFiles.clear();
+  sidebar.removeAllItems();
   for (int i = 0; i < listOfFiles.length; i++) {
     if (listOfFiles[i].isFile()) {
-      dataFiles.add(listOfFiles[i].getName());
+      DataFileItem item = new DataFileItem(i, listOfFiles[i].getName());
+      sidebar.addItem(item);
     }
   }
+}
 
-  sidebar.removeAllItems();
-  for (int i = 0; i < dataFiles.size(); i++) {
-    DataFileItem item = new DataFileItem(dataFiles.get(i), 0, 40 + i * 26, SIDEBAR, 25);
-    sidebar.addItem(item);
-  }
+void deleteData(String filename) {
+  new File(SAVEDATA_DIR + "/" + filename).delete();
 }
