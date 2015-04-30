@@ -29,12 +29,14 @@ import java.util.regex.Pattern;
 // * Check to see if someone is spoofing his location in the message data. Regions are already defined
 // * Map checkins against ride capacity (see method for determining ride capacity via selections)
 
-// constants
-final PImage MAP = loadImage("/Users/federicobond/Downloads/Auxiliary Files/Park Map.png");;
-final PImage BG = loadImage("/Users/federicobond/bg.png");
+final String BASE_DATA = "/Users/federicobond/Downloads";
 
-final String LOCATION_DATA = "/Users/federicobond/Downloads/MC1 2015 Data/park-movement-%s.csv";
-final String COMM_DATA = "/Users/federicobond/Downloads/MC2 2015 Data/comm-data-%s.csv";
+// constants
+
+PImage MAP, BG;
+
+final String LOCATION_DATA = BASE_DATA + "/MC1 2015 Data/park-movement-%s.csv";
+final String COMM_DATA = BASE_DATA + "/MC2 2015 Data/comm-data-%s.csv";
 final String DEFAULT_DAY = "Fri";
 
 final String SAVEDATA_DIR = "/Users/federicobond/data";
@@ -99,6 +101,9 @@ volatile boolean loading = false;
 
 void setup() {
   size(WIDTH + 2* SIDEBAR, HEIGHT);
+
+  MAP = loadImage("Park Map.png");
+  BG = loadImage("bg.png");
 
   fontBold = loadFont("Menlo.vlw");
   fontRegular = loadFont("Menlo-Regular.vlw");
