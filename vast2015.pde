@@ -3,6 +3,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.io.FileReader;
@@ -11,7 +12,9 @@ import java.io.FileNotFoundException;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
 import java.awt.Toolkit;
-import javax.swing.SwingUtilities;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.util.regex.Pattern;
 
 // TODO:
 // * Add ability to record events and alert of upcoming events
@@ -43,7 +46,7 @@ final int SIDEBAR = 265;
 final float ZOOM_STEP = 0.1;
 final float MAX_ZOOM = 3.0;
 final float PAN_STEP = 15;
-final int TIME_STEP = 5;
+final float TIME_STEP = 40.0;
 
 PFont fontBold, fontRegular;
 
@@ -56,7 +59,7 @@ volatile BufferedReader comReader;
 
 volatile Map<Integer, Tracker> locations = new HashMap<Integer, Tracker>();
 //volatile List<Integer> trackList = new ArrayList<Integer>(Arrays.asList(1116329, 1045021, 1749109, 918738, 1250941, 970490, 128533, 1508923, 839736, 1278894));
-volatile Set<Integer> trackSet = new HashSet<Integer>();
+volatile Set<Integer> trackSet = new TreeSet<Integer>();
 
 {
   trackSet.addAll(Arrays.asList(1080969, 1629516, 1781070, 644885, 1935406, 521750, 1787551, 1600469));
@@ -93,12 +96,14 @@ int firstMouseX, firstMouseY;
 // data status
 volatile boolean loading = false;
 
+
 void setup() {
+  size(WIDTH + 2* SIDEBAR, HEIGHT);
+
   fontBold = loadFont("Menlo.vlw");
   fontRegular = loadFont("Menlo-Regular.vlw");
 
   randomSeed(0); // make colors repeatable
-  size(WIDTH + 2* SIDEBAR, HEIGHT);
 
   textFont(fontRegular);
   textSize(14);
@@ -120,7 +125,7 @@ void setup() {
 }
 
 void updateData() {
-  int timestep = (int) constrain(50.0 / frameRate, 3, 10);
+  int timestep = (int) constrain(TIME_STEP / frameRate, 2, 10);
   do {
     timestamp = fields[0];
 
@@ -326,6 +331,8 @@ void keyPressed() {
     dimUntracked = !dimUntracked;
   } else if (key == 'c') {
     copyTrackedIds();
+  } else if (key == 'v') {
+    pasteTrackedIds();
   } else if (key == 't') {
     showTrails = !showTrails;
   } else if (key == 'q') {
@@ -378,4 +385,30 @@ void copyTrackedIds() {
   StringSelection selection = new StringSelection(copy.substring(1, copy.length() - 1));
   Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
   clipboard.setContents(selection, null);
+}
+
+void pasteTrackedIds() {
+  Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+  String data = null;
+  try {
+    data = (String)clipboard.getData(DataFlavor.stringFlavor);
+  } catch (UnsupportedFlavorException e) {
+    println("Paste data not compatible");
+    return;
+  } catch (IOException e) {
+    println("Error while trying to read clipboard");
+    return;
+  }
+  if (Pattern.matches("[\\s*\\d+\\s*,\\s*]+", data)) {
+    String[] ids = data.split("[\\s,]+");
+    clearTracked();
+    for (String sid : ids) {
+      int id = Integer.parseInt(sid);
+      Tracker t = (Tracker)locations.get(id);
+      if (t != null) {
+        t.setTracking(true);
+        trackSet.add(id);
+      }
+   }
+  }
 }
