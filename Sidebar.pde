@@ -73,7 +73,7 @@ public class DataFileItem extends Component {
   DataFileItem(int i, String name) {
     super(0 + (SIDEBAR / 2) * (i%2), 40 + i/2 * 26, SIDEBAR / 2 - 1, 25);
     this.name = name;
-    timestamp = name.substring(5, 23).replace("_", " ");
+    timestamp = name.substring(5, name.length()).replace("_", " ");
     timestamp = timestamp.replace("2014-6-06", "Fri");
     timestamp = timestamp.replace("2014-6-07", "Sat");
     timestamp = timestamp.replace("2014-6-08", "Sun");
