@@ -29,17 +29,17 @@ import java.util.regex.Pattern;
 // * Check to see if someone is spoofing his location in the message data. Regions are already defined
 // * Map checkins against ride capacity (see method for determining ride capacity via selections)
 
-final String BASE_DATA = "/Users/federicobond/Downloads";
+final String BASE_DATA = "data";
 
 // constants
 
 PImage MAP, BG;
 
-final String LOCATION_DATA = BASE_DATA + "/MC1 2015 Data/park-movement-%s.csv";
-final String COMM_DATA = BASE_DATA + "/MC2 2015 Data/comm-data-%s.csv";
+final String LOCATION_DATA = BASE_DATA + "/park-movement-%s.csv";
+final String COMM_DATA = BASE_DATA + "/comm-data-%s.csv";
 final String DEFAULT_DAY = "Fri";
 
-final String SAVEDATA_DIR = "/Users/federicobond/data";
+final String SAVEDATA_DIR = "saved_data";
 
 final int WIDTH = 750;
 final int HEIGHT = 744;
@@ -112,9 +112,10 @@ void setup() {
 
   textFont(fontRegular);
   textSize(14);
+  
 
-  locReader = openData(locationData(DEFAULT_DAY));
-  comReader = openData(commData(DEFAULT_DAY));
+  locReader = openData(sketchPath(locationData(DEFAULT_DAY)));
+  comReader = openData(sketchPath(commData(DEFAULT_DAY)));
 
   fields = getData(locReader);
   timestamp = fields[0];

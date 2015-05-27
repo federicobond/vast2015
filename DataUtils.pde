@@ -6,8 +6,13 @@ String commData(String day) {
   return String.format(COMM_DATA, day);
 }
 
+String saveDataDir() {
+  return sketchPath(SAVEDATA_DIR);
+}
+
 BufferedReader openData(String file) {
   BufferedReader reader = null;
+
   try {
     reader = new BufferedReader(new FileReader(new File(file)));
   } catch (FileNotFoundException ignore) {
@@ -56,7 +61,7 @@ void saveData() {
     locs.append(loc);
   }
   obj.setJSONArray("locations", locs);
-  saveJSONObject(obj, SAVEDATA_DIR + "/data-" + timestamp.replace(" ", "_") + ".json", "compact");
+  saveJSONObject(obj, saveDataDir() + "/data-" + timestamp.replace(" ", "_") + ".json", "compact");
   updateDataFiles();
   println("Data snapshot saved");
 }
@@ -130,9 +135,8 @@ void _loadData() {
 }
 
 void updateDataFiles() {
-  File folder = new File(SAVEDATA_DIR);
+  File folder = new File(saveDataDir());
   File[] listOfFiles = folder.listFiles();
-
   sidebar.removeAllItems();
   for (int i = 0; i < listOfFiles.length; i++) {
     if (listOfFiles[i].isFile()) {
@@ -143,5 +147,5 @@ void updateDataFiles() {
 }
 
 void deleteData(String filename) {
-  new File(SAVEDATA_DIR + "/" + filename).delete();
+  new File(saveDataDir() + "/" + filename).delete();
 }
